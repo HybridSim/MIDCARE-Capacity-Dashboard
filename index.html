@@ -54,7 +54,6 @@
       </div>
       <div class="control">
         <label>Consultant increase rate (annual)</label>
-        <!-- max 6% to match the model envelope -->
         <input id="consRate" type="range" min="0.0" max="0.06" step="0.0005" value="0.035">
         <div class="val"><span id="consRateVal">3.50%</span> / yr</div>
       </div>
@@ -120,24 +119,24 @@
   // ---- Historic data ----
   const YEARS_ALL = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049,2050];
   const YEARS_HIST = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
-  const POP_H = [361028,370177.5,379327,380496,381665,382834,384003,385172,389723.1667,394274.3333,398825.5,403376.6667,407927.8333,412479,412479,412479,412479];
+  const POP_H  = [361028,370177.5,379327,380496,381665,382834,384003,385172,389723.1667,394274.3333,398825.5,403376.6667,407927.8333,412479,412479,412479,412479];
   const CONS_H = [129,132,135,138,141,145,149,153,157,161,165,176,174,189.5,205,234,240];
   const CAP2_H = [179,179,175,172,189,185,177,178,167,186,187,184,184,184,184,184,184];
   const CAP4_H = [420,404,401,403,367,354,357,426,421,444,434,460,516,522.3333,528.6667,535,535];
 
   // ---- Parameters ----
-  const DAYS_PER_YEAR = 365;
-  const PATIENT_TO_POP = 0.194;
+  const DAYS_PER_YEAR   = 365;
+  const PATIENT_TO_POP  = 0.194;
   const BEDS_PER_PATIENT = 1.0;
 
-  let POP_RATE = 0.0074;
-  let CONS_RATE = 0.035;        // base consultant growth rate
+  let POP_RATE  = 0.0074;
+  let CONS_RATE = 0.035;      // base consultant growth rate
   let BED_RATE2_MULT = 0.999;
   let BED_RATE4 = 0.099;
   let OPT_OCC = 0.85;
   let NORM_LOS = 5.0;
-  let NORM_SPEC_TO_BED = 0.557; // People/(Beds*Days), per-thousand bed-days baseline
-  let NORM_BED_TO_PAT = 0.0051; // Beds/Person
+  let NORM_SPEC_TO_BED = 0.557; // People/(Beds*Days) baseline, spec-to-bed uses per-1000 below
+  let NORM_BED_TO_PAT  = 0.0051; // Beds/Person
 
   const idxOfYear = (y) => YEARS_ALL.indexOf(y);
 
@@ -159,24 +158,22 @@
       const K4 = k4[t-1];
 
       const totalBedsDays = (K2 + K4) * DAYS_PER_YEAR;
-
       const patients = PATIENT_TO_POP * P + C * (413590.0/234.0);
 
       const m2_ratio = totalBedsDays > 0 ? (K2 * DAYS_PER_YEAR) / totalBedsDays : 0;
       const lengthOfStay = 1 + (NORM_LOS * m2_ratio);
 
-      const required = patients * lengthOfStay * BEDS_PER_PATIENT;
-      const occupied = Math.min(required, totalBedsDays * OPT_OCC);
+      const required  = patients * lengthOfStay * BEDS_PER_PATIENT;
+      const occupied  = Math.min(required, totalBedsDays * OPT_OCC);
       const occupancy = totalBedsDays > 0 ? occupied / totalBedsDays : 0;
       const rate_effect1 = OPT_OCC - occupancy;
 
       const bedToPatientRatio = patients > 0 ? K4 / patients : 0;
       const rate_effect3 = BED_RATE4 * (bedToPatientRatio / NORM_BED_TO_PAT);
 
-      // *** FIX 1: per-thousand bed-days (×1000) to match Vensim + baseline 0.557 ***
-      const specToBed = totalBedsDays > 0 ? (C / Math.max(1, totalBedsDays)) * 1000 : 0;
-
-      // *** FIX 2: clamp effective consultant growth to ≤ 6%/yr ***
+      // per-THOUSAND bed-days (×1000) to align with the 0.557 baseline
+      const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0;
+      // cap effective consultant growth at 6%/yr to prevent runaway
       const current_effect2 = Math.max(0, Math.min(0.06, CONS_RATE * (specToBed / NORM_SPEC_TO_BED)));
 
       const dP  = POP_RATE * P;
@@ -203,7 +200,7 @@
   }
   const cfg = { responsive:true, displaylogo:false };
 
-  // allow optional x-axis title so only the top row shows "Year"
+  // Optional x-axis title — we set it for the top row only.
   function mkLayout(ytitle, yrange, xaxisTitle = "") {
     return {
       margin:{l:60,r:10,t:10,b:40},
@@ -214,13 +211,13 @@
   }
 
   function initialPlots() {
-    const x0 = [2025, 2025];
+    const x0   = [2025, 2025];
     const yPop0  = [POP_H.at(-1),  POP_H.at(-1)];
     const yCons0 = [CONS_H.at(-1), CONS_H.at(-1)];
     const yK20   = [CAP2_H.at(-1), CAP2_H.at(-1)];
     const yK40   = [CAP4_H.at(-1), CAP4_H.at(-1)];
 
-    // Top row — include x-axis label "Year"
+    // TOP ROW — show x-axis title "Year"
     Plotly.newPlot("popPlot",  [
       {x:YEARS_HIST,y:POP_H,  mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yPop0,          mode:"lines", line:{color:"#1f77b4", width:3}}
@@ -231,16 +228,16 @@
       {x:x0,y:yCons0,         mode:"lines", line:{color:"#1f77b4", width:3}}
     ], mkLayout("Consultants", computeYRange(CONS_H, [yCons0[1]]), "Year"), cfg);
 
-    // Bottom row — titles (kept in the box header), no x-axis label needed
+    // BOTTOM ROW — use y-axis titles as requested
     Plotly.newPlot("cap2Plot", [
       {x:YEARS_HIST,y:CAP2_H, mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yK20,           mode:"lines", line:{color:"#1f77b4", width:3}}
-    ], mkLayout("Beds", computeYRange(CAP2_H, [yK20[1]])), cfg);
+    ], mkLayout("Model 2 Beds", computeYRange(CAP2_H, [yK20[1]])), cfg);
 
     Plotly.newPlot("cap4Plot", [
       {x:YEARS_HIST,y:CAP4_H, mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yK40,           mode:"lines", line:{color:"#1f77b4", width:3}}
-    ], mkLayout("Beds", computeYRange(CAP4_H, [yK40[1]])), cfg);
+    ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [yK40[1]])), cfg);
   }
 
   // ---- Animation ----
@@ -328,7 +325,6 @@
 </script>
 </body>
 </html>
-
 
 
 
