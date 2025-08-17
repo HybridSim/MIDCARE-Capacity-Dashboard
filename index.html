@@ -3,14 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MIDCARE - Capacity - Strategic - Population Level</title>
+  <title>MIDCARE &copy; Capacity - Strategic Population Level</title>
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-  <!-- Import Poppins font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root { --gap: 12px; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: 'Poppins', sans-serif; color: #111; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111; }
     header { padding: 14px 16px; border-bottom: 1px solid #eee; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
     header h1 { margin: 0; font-size: 20px; letter-spacing: 0.2px; }
     .toolbar button {
@@ -38,9 +36,9 @@
 </head>
 <body>
   <header>
-    <h1>MIDCARE - Capacity - Strategic - Population Level</h1>
+    <h1>MIDCARE &copy; Capacity - Strategic Population Level</h1>
     <div class="toolbar">
-      <button id="play">▶ Play</button>
+      <button id="play">▶ Run</button>
       <button id="pause" disabled>⏸ Pause</button>
       <button id="reset">⟲ Reset</button>
       <span id="yearLabel" style="margin-left:8px;font-weight:600;">Year: 2025</span>
@@ -48,7 +46,6 @@
   </header>
 
   <div class="wrap">
-    <!-- Controls -->
     <div class="controls">
       <div class="control">
         <label>Population growth rate (annual)</label>
@@ -92,13 +89,11 @@
       </div>
     </div>
 
-    <!-- Legend -->
     <div id="legendNote">
       <span class="legendSwatch red"></span>Historic to 2025 &nbsp;&nbsp;
       <span class="legendSwatch blue"></span>Projection from 2025 (animated)
     </div>
 
-    <!-- Plots -->
     <div class="grid">
       <div class="card">
         <div class="plotTitle">Population — Midwest</div>
@@ -109,21 +104,246 @@
         <div id="consPlot"></div>
       </div>
       <div class="card">
-        <div class="plotTitle">Model 2 beds</div>
         <div id="cap2Plot"></div>
       </div>
       <div class="card">
-        <div class="plotTitle">Model 4 beds</div>
         <div id="cap4Plot"></div>
       </div>
     </div>
   </div>
 
 <script>
-/* JS unchanged */
+(function() {
+  // ---- Historic data ----
+  const YEARS_ALL = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049,2050];
+  const YEARS_HIST = [2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+  const POP_H  = [361028,370177.5,379327,380496,381665,382834,384003,385172,389723.1667,394274.3333,398825.5,403376.6667,407927.8333,412479,412479,412479,412479];
+  const CONS_H = [129,132,135,138,141,145,149,153,157,161,165,176,174,189.5,205,234,240];
+  const CAP2_H = [179,179,175,172,189,185,177,178,167,186,187,184,184,184,184,184,184];
+  const CAP4_H = [420,404,401,403,367,354,357,426,421,444,434,460,516,522.3333,528.6667,535,535];
+
+  // ---- Parameters ----
+  const DAYS_PER_YEAR   = 365;
+  const PATIENT_TO_POP  = 0.194;
+  const BEDS_PER_PATIENT = 1.0;
+
+  let POP_RATE  = 0.0074;
+  let CONS_RATE = 0.035;
+  let BED_RATE2_MULT = 0.999;
+  let BED_RATE4 = 0.099;
+  let OPT_OCC = 0.85;
+  let NORM_LOS = 5.0;
+  let NORM_SPEC_TO_BED = 0.557; // baseline; we compute spec/bed-days per 1000 below
+  let NORM_BED_TO_PAT  = 0.0051;
+
+  const idxOfYear = (y) => YEARS_ALL.indexOf(y);
+
+  // ---- Simulation ----
+  function simulateFull() {
+    const i2025 = YEARS_HIST.length - 1;
+    const basePop = POP_H[i2025];
+    theCons     = CONS_H[i2025];
+    const baseK2  = CAP2_H[i2025];
+    const baseK4  = CAP4_H[i2025];
+
+    const yearsProj = YEARS_ALL.slice(idxOfYear(2025));
+    const pop = [basePop], cons = [theCons], k2 = [baseK2], k4 = [baseK4];
+
+    for (let t = 1; t < yearsProj.length; t++) {
+      const P  = pop[t-1];
+      const C  = cons[t-1];
+      const K2 = k2[t-1];
+      const K4 = k4[t-1];
+
+      const totalBedsDays = (K2 + K4) * DAYS_PER_YEAR;
+      const patients = PATIENT_TO_POP * P + C * (413590.0/234.0);
+
+      const m2_ratio = totalBedsDays > 0 ? (K2 * DAYS_PER_YEAR) / totalBedsDays : 0;
+      const lengthOfStay = 1 + (NORM_LOS * m2_ratio);
+
+      const required  = patients * lengthOfStay * BEDS_PER_PATIENT;
+      const occupied  = Math.min(required, totalBedsDays * OPT_OCC);
+      const occupancy = totalBedsDays > 0 ? occupied / totalBedsDays : 0;
+      const rate_effect1 = OPT_OCC - occupancy;
+
+      const bedToPatientRatio = patients > 0 ? K4 / patients : 0;
+      const rate_effect3 = BED_RATE4 * (bedToPatientRatio / NORM_BED_TO_PAT);
+
+      // per-THOUSAND bed-days to align with 0.557 baseline
+      const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0;
+      // cap effective consultant growth at 6%/yr
+      const current_effect2 = Math.max(0, Math.min(0.06, CONS_RATE * (specToBed / NORM_SPEC_TO_BED)));
+
+      const dP  = POP_RATE * P;
+      const dC  = C * current_effect2;
+
+      const dK2 = (K2 < 800)  ? (K2 * Math.max(0.02035, rate_effect1) * BED_RATE2_MULT) : 0;
+      const dK4 = (K4 < 1500) ? (K4 * Math.max(0.03, rate_effect3)) : 0;
+
+      pop.push(P + dP);
+      cons.push(C + dC);
+      k2.push(K2 + dK2);
+      k4.push(K4 + dK4);
+    }
+    return { yearsProj, pop, cons, k2, k4 };
+  }
+
+  // ---- Plot helpers ----
+  function computeYRange(hist, projSlice) {
+    const all = hist.concat(projSlice);
+    const min = Math.min.apply(null, all);
+    const max = Math.max.apply(null, all);
+    const pad = (max - min) * 0.08 || 1;
+    return [Math.max(0, min - pad), max + pad];
+  }
+  const cfg = { responsive:true, displaylogo:false };
+
+  // Layout helper: lets us set xTitle and a chart title if desired
+  function mkLayout(yTitle, yRange, {xTitle="", chartTitle=""} = {}) {
+    return {
+      margin:{l:70,r:10,t:48,b:64},
+      xaxis:{
+        title:{text:xTitle},
+        titlefont:{size:12},
+        title_standoff:12,
+        automargin:true,
+        range:[2009,2050]
+      },
+      yaxis:{ title:{text:yTitle}, automargin:true, range:yRange },
+      title: chartTitle ? { text: chartTitle, x: 0, xanchor: "left", y: 0.98 } : undefined,
+      showlegend:false
+    };
+  }
+
+  function initialPlots() {
+    const x0   = [2025, 2025];
+    const yPop0  = [POP_H.at(-1),  POP_H.at(-1)];
+    const yCons0 = [CONS_H.at(-1), CONS_H.at(-1)];
+    const yK20   = [CAP2_H.at(-1), CAP2_H.at(-1)];
+    const yK40   = [CAP4_H.at(-1), CAP4_H.at(-1)];
+
+    // TOP ROW — show x-axis title "Year"
+    Plotly.newPlot("popPlot",  [
+      {x:YEARS_HIST,y:POP_H,  mode:"lines", line:{color:"#d62728", width:2}},
+      {x:x0,y:yPop0,          mode:"lines", line:{color:"#1f77b4", width:3}}
+    ], mkLayout("People", computeYRange(POP_H, [yPop0[1]]), {xTitle:"Year"}), cfg);
+
+    Plotly.newPlot("consPlot", [
+      {x:YEARS_HIST,y:CONS_H, mode:"lines", line:{color:"#d62728", width:2}},
+      {x:x0,y:yCons0,         mode:"lines", line:{color:"#1f77b4", width:3}}
+    ], mkLayout("Consultants", computeYRange(CONS_H, [yCons0[1]]), {xTitle:"Year"}), cfg);
+
+    // BOTTOM ROW — set in-plot titles
+    Plotly.newPlot("cap2Plot", [
+      {x:YEARS_HIST,y:CAP2_H, mode:"lines", line:{color:"#d62728", width:2}},
+      {x:x0,y:yK20,           mode:"lines", line:{color:"#1f77b4", width:3}}
+    ], mkLayout("Model 2 Beds", computeYRange(CAP2_H, [yK20[1]]), {chartTitle:"Model 2 beds"}), cfg);
+
+    Plotly.newPlot("cap4Plot", [
+      {x:YEARS_HIST,y:CAP4_H, mode:"lines", line:{color:"#d62728", width:2}},
+      {x:x0,y:yK40,           mode:"lines", line:{color:"#1f77b4", width:3}}
+    ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [yK40[1]]), {chartTitle:"Model 4 beds"}), cfg);
+  }
+
+  // ---- Animation ----
+  let sim = null;
+  let frameIdx = 0;         // start at 2025
+  let timer = null;
+  const msPerFrame = 200;
+  const yearLabel = document.getElementById("yearLabel");
+
+  function renderFrame(i) {
+    const x = sim.yearsProj.slice(0, i+1);
+    const yrPop  = computeYRange(POP_H,  sim.pop.slice(0, i+1));
+    const yrCons = computeYRange(CONS_H, sim.cons.slice(0, i+1));
+    const yrK2   = computeYRange(CAP2_H, sim.k2.slice(0, i+1));
+    const yrK4   = computeYRange(CAP4_H, sim.k4.slice(0, i+1));
+
+    Plotly.restyle("popPlot",  {x:[YEARS_HIST, x], y:[POP_H,  sim.pop.slice(0,i+1)]});
+    Plotly.relayout("popPlot", { "yaxis.range": yrPop });
+
+    Plotly.restyle("consPlot", {x:[YEARS_HIST, x], y:[CONS_H, sim.cons.slice(0,i+1)]});
+    Plotly.relayout("consPlot", { "yaxis.range": yrCons });
+
+    Plotly.restyle("cap2Plot",{x:[YEARS_HIST, x], y:[CAP2_H, sim.k2.slice(0,i+1)]});
+    Plotly.relayout("cap2Plot",{ "yaxis.range": yrK2 });
+
+    Plotly.restyle("cap4Plot",{x:[YEARS_HIST, x], y:[CAP4_H, sim.k4.slice(0,i+1)]});
+    Plotly.relayout("cap4Plot",{ "yaxis.range": yrK4 });
+
+    yearLabel.textContent = "Year: " + x.at(-1);
+  }
+
+  function start() {
+    play.disabled = true; 
+    pauseBtn.disabled = false;
+    if (!sim) sim = simulateFull();
+    if (frameIdx <= 0) renderFrame(0);
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => {
+      frameIdx += 1;
+      if (frameIdx >= sim.yearsProj.length) { pause(); return; }
+      renderFrame(frameIdx);
+    }, msPerFrame);
+  }
+  function pause() { 
+    play.disabled = false; 
+    pauseBtn.disabled = true; 
+    if (timer) clearInterval(timer); 
+    timer = null; 
+  }
+  function reset() { 
+    pause(); 
+    sim = simulateFull(); 
+    frameIdx = 0; 
+    renderFrame(0); 
+  }
+
+  // ---- Sliders ----
+  const $ = (id) => document.getElementById(id);
+  function updateParams() {
+    POP_RATE         = parseFloat($("popRate").value);
+    CONS_RATE        = parseFloat($("consRate").value);
+    BED_RATE2_MULT   = parseFloat($("bedRate2").value);
+    BED_RATE4        = parseFloat($("bedRate4").value);
+    OPT_OCC          = parseFloat($("optOcc").value);
+    NORM_LOS         = parseFloat($("los").value);
+    NORM_SPEC_TO_BED = parseFloat($("normSpecBed").value);
+    NORM_BED_TO_PAT  = parseFloat($("normBedPat").value);
+
+    $("popRateVal").textContent     = (POP_RATE*100).toFixed(2) + "%";
+    $("consRateVal").textContent    = (CONS_RATE*100).toFixed(2) + "%";
+    $("bedRate2Val").textContent    = BED_RATE2_MULT.toFixed(3);
+    $("bedRate4Val").textContent    = (BED_RATE4*100).toFixed(2) + "%";
+    $("optOccVal").textContent      = OPT_OCC.toFixed(2);
+    $("losVal").textContent         = NORM_LOS.toFixed(1);
+    $("normSpecBedVal").textContent = NORM_SPEC_TO_BED.toFixed(3);
+    $("normBedPatVal").textContent  = NORM_BED_TO_PAT.toFixed(4);
+
+    sim = simulateFull(); 
+    frameIdx = 0; 
+    renderFrame(0);
+  }
+  ["popRate","consRate","bedRate2","bedRate4","optOcc","los","normSpecBed","normBedPat"].forEach(id => {
+    $(id).addEventListener("input", updateParams);
+    $(id).addEventListener("change", updateParams);
+  });
+
+  // ---- Init / Buttons ----
+  initialPlots();
+  sim = simulateFull();
+  renderFrame(0);
+
+  const play = document.getElementById("play");
+  const pauseBtn = document.getElementById("pause");
+  document.getElementById("play").addEventListener("click", start);
+  document.getElementById("pause").addEventListener("click", pause);
+  document.getElementById("reset").addEventListener("click", reset);
+})();
 </script>
 </body>
 </html>
+
 
 
 
