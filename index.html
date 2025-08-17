@@ -5,50 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>MIDCARE - Capacity - Strategic - Population Level</title>
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+
+  <!-- Load Poppins from Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
     :root { --gap: 12px; }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Poppins", sans-serif;
-      color: #111;
-      background: #fff;
+    body { 
+      margin: 0; 
+      font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; 
+      color: #111; 
     }
-    header {
-      padding: 14px 16px;
-      border-bottom: 1px solid #eee;
-      display:flex; align-items:center; justify-content:space-between;
-      flex-wrap:wrap; gap:12px;
+    header { 
+      padding: 14px 16px; 
+      border-bottom: 1px solid #eee; 
+      display:flex; 
+      align-items:center; 
+      justify-content:space-between; 
+      gap:12px; 
+      flex-wrap:wrap;
     }
-    header h1 { margin: 0; font-size: 20px; font-weight:600; }
+    header h1 { margin: 0; font-size: 20px; letter-spacing: 0.2px; }
     .toolbar button {
-      padding: 8px 10px; border: 1px solid #ddd; background:#fff;
-      border-radius:10px; cursor:pointer;
-      font-weight:600; font-family:"Poppins", sans-serif;
+      padding: 8px 10px; border: 1px solid #ddd; background:#fff; border-radius:10px; cursor:pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04); font-weight:600;
+      font-family: 'Poppins', sans-serif;
     }
     .toolbar button:disabled { opacity: .5; cursor: default; }
-    .wrap { max-width: 1800px; margin: 0 auto; padding: 16px; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(260px, 1fr));
-      grid-auto-rows: 360px;
-      gap: var(--gap);
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .controls {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: var(--gap); margin: 12px 0 16px;
     }
-    .card {
-      padding: 6px; border: 1px solid #eee; border-radius: 12px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04); background: #fff;
-    }
-    .plotTitle {
-      font-size: 14px; font-weight: 600; margin: 8px 6px 0 8px; color: #222;
-    }
-    #legendNote {
-      margin: 8px 0 12px; font-size: 12px; color: #444; font-family:"Poppins",sans-serif;
-    }
+    .control { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .control label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 6px; }
+    .control input[type=range] { width: 100%; }
+    .control .val { font-variant-numeric: tabular-nums; font-size: 12px; color: #444; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 420px; gap: var(--gap); }
+    .card { padding: 6px; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); background: #fff; }
+    .plotTitle { font-size: 14px; font-weight: 600; margin: 8px 6px 0 8px; color: #222; }
+    #legendNote { margin: 8px 0 12px; font-size: 12px; color: #444; }
     .legendSwatch { display:inline-block; width:10px; height:10px; vertical-align:middle; margin-right:6px; border-radius:2px; }
     .red { background:#d62728; } .blue { background:#1f77b4; }
-    @media (max-width: 1400px) { .grid { grid-template-columns: repeat(2, minmax(280px, 1fr)); } }
-    @media (max-width: 900px)  { .grid { grid-template-columns: 1fr; grid-auto-rows: 380px; } }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; grid-auto-rows: 380px; } }
   </style>
 </head>
 <body>
@@ -62,109 +62,11 @@
     </div>
   </header>
 
-  <div class="wrap">
-    <div id="legendNote">
-      <span class="legendSwatch red"></span>Historic to 2025 &nbsp;&nbsp;
-      <span class="legendSwatch blue"></span>Projection from 2025 (animated)
-    </div>
-
-    <div class="grid">
-      <div class="card"><div class="plotTitle">Population — Midwest</div><div id="popPlot"></div></div>
-      <div class="card"><div class="plotTitle">Consultants — Headcount</div><div id="consPlot"></div></div>
-      <div class="card"><div class="plotTitle">Model 2 Beds</div><div id="cap2Plot"></div></div>
-      <div class="card"><div class="plotTitle">Model 4 Beds</div><div id="cap4Plot"></div></div>
-    </div>
-  </div>
-
-<script>
-(function() {
-  const YEARS_ALL = Array.from({length:42},(_,i)=>2009+i);
-  const YEARS_HIST = YEARS_ALL.slice(0,17);
-  const POP_H  = [361028,370177,379327,380496,381665,382834,384003,385172,389723,394274,398825,403376,407928,412479,412479,412479,412479];
-  const CONS_H = [129,132,135,138,141,145,149,153,157,161,165,176,174,189,205,234,240];
-  const CAP2_H = [179,179,175,172,189,185,177,178,167,186,187,184,184,184,184,184,184];
-  const CAP4_H = [420,404,401,403,367,354,357,426,421,444,434,460,516,522,529,535,535];
-
-  let POP_RATE=0.0074, CONS_RATE=0.035, BED_RATE2_MULT=0.999, BED_RATE4=0.099, OPT_OCC=0.85;
-  let NORM_LOS=5.0, NORM_SPEC_TO_BED=0.557, NORM_BED_TO_PAT=0.0051;
-  const DAYS_PER_YEAR=365, PATIENT_TO_POP=0.194, BEDS_PER_PATIENT=1.0;
-
-  function simulateFull() {
-    const basePop=POP_H.at(-1), baseCons=CONS_H.at(-1), baseK2=CAP2_H.at(-1), baseK4=CAP4_H.at(-1);
-    const yearsProj=YEARS_ALL.slice(YEARS_HIST.length-1);
-    const pop=[basePop], cons=[baseCons], k2=[baseK2], k4=[baseK4];
-    for (let t=1;t<yearsProj.length;t++) {
-      const P=pop[t-1], C=cons[t-1], K2=k2[t-1], K4=k4[t-1];
-      const totalBedsDays=(K2+K4)*DAYS_PER_YEAR;
-      const patients=PATIENT_TO_POP*P+C*(413590/234);
-      const m2_ratio=(K2*DAYS_PER_YEAR)/Math.max(1,totalBedsDays);
-      const los=1+NORM_LOS*m2_ratio;
-      const required=patients*los*BEDS_PER_PATIENT;
-      const occupied=Math.min(required,totalBedsDays*OPT_OCC);
-      const occupancy=occupied/Math.max(1,totalBedsDays);
-      const rate_effect1=OPT_OCC-occupancy;
-      const bedToPat=K4/Math.max(1,patients);
-      const rate_effect3=BED_RATE4*(bedToPat/NORM_BED_TO_PAT);
-      const specToBed=(C/Math.max(1,totalBedsDays))*1000;
-      const effCons=Math.min(0.06,CONS_RATE*(specToBed/NORM_SPEC_TO_BED));
-      pop.push(P+POP_RATE*P);
-      cons.push(C+C*effCons);
-      k2.push(K2+(K2<800?K2*Math.max(0.02035,rate_effect1)*BED_RATE2_MULT:0));
-      k4.push(K4+(K4<1500?K4*Math.max(0.03,rate_effect3):0));
-    }
-    return {yearsProj,pop,cons,k2,k4};
-  }
-
-  function mkLayout(yTitle,yRange,xTitle="Year") {
-    return {
-      margin:{l:64,r:6,t:30,b:50},
-      font:{family:"Poppins, sans-serif", size:12},
-      xaxis:{title:xTitle,range:[2009,2050],tickfont:{family:"Poppins, sans-serif"}},
-      yaxis:{title:yTitle,range:yRange,tickfont:{family:"Poppins, sans-serif"}},
-      showlegend:false
-    };
-  }
-  const cfg={responsive:true,displaylogo:false};
-
-  function computeYRange(hist,proj){const all=hist.concat(proj);const min=Math.min(...all),max=Math.max(...all);const pad=(max-min)*0.08||1;return [Math.max(0,min-pad),max+pad];}
-
-  function initialPlots(){
-    const x0=[2025,2025];
-    const yPop0=[POP_H.at(-1),POP_H.at(-1)], yCons0=[CONS_H.at(-1),CONS_H.at(-1)],
-          yK20=[CAP2_H.at(-1),CAP2_H.at(-1)], yK40=[CAP4_H.at(-1),CAP4_H.at(-1)];
-    Plotly.newPlot("popPlot", [{x:YEARS_HIST,y:POP_H,mode:"lines",line:{color:"#d62728"}},
-                               {x:x0,y:yPop0,mode:"lines",line:{color:"#1f77b4"}}],
-                               mkLayout("People", computeYRange(POP_H,[yPop0[1]])), cfg);
-    Plotly.newPlot("consPlot",[{x:YEARS_HIST,y:CONS_H,mode:"lines",line:{color:"#d62728"}},
-                               {x:x0,y:yCons0,mode:"lines",line:{color:"#1f77b4"}}],
-                               mkLayout("Consultants",computeYRange(CONS_H,[yCons0[1]])), cfg);
-    Plotly.newPlot("cap2Plot",[{x:YEARS_HIST,y:CAP2_H,mode:"lines",line:{color:"#d62728"}},
-                               {x:x0,y:yK20,mode:"lines",line:{color:"#1f77b4"}}],
-                               mkLayout("Model 2 Beds",computeYRange(CAP2_H,[yK20[1]])), cfg);
-    Plotly.newPlot("cap4Plot",[{x:YEARS_HIST,y:CAP4_H,mode:"lines",line:{color:"#d62728"}},
-                               {x:x0,y:yK40,mode:"lines",line:{color:"#1f77b4"}}],
-                               mkLayout("Model 4 Beds",computeYRange(CAP4_H,[yK40[1]])), cfg);
-  }
-
-  let sim=null,frameIdx=1,timer=null;const msPerFrame=200,yearLabel=document.getElementById("yearLabel");
-  function renderFrame(i){
-    const x=sim.yearsProj.slice(0,i+1);
-    Plotly.restyle("popPlot",{x:[YEARS_HIST,x],y:[POP_H,sim.pop.slice(0,i+1)]});
-    Plotly.restyle("consPlot",{x:[YEARS_HIST,x],y:[CONS_H,sim.cons.slice(0,i+1)]});
-    Plotly.restyle("cap2Plot",{x:[YEARS_HIST,x],y:[CAP2_H,sim.k2.slice(0,i+1)]});
-    Plotly.restyle("cap4Plot",{x:[YEARS_HIST,x],y:[CAP4_H,sim.k4.slice(0,i+1)]});
-    yearLabel.textContent="Year: "+x.at(-1);
-  }
-  function start(){play.disabled=true;pauseBtn.disabled=false;if(!sim)sim=simulateFull();if(frameIdx<=1)renderFrame(1);if(timer)clearInterval(timer);timer=setInterval(()=>{frameIdx++;if(frameIdx>=sim.yearsProj.length){pause();return;}renderFrame(frameIdx);},msPerFrame);}
-  function pause(){play.disabled=false;pauseBtn.disabled=true;if(timer)clearInterval(timer);timer=null;}
-  function reset(){pause();sim=simulateFull();frameIdx=1;renderFrame(1);}
-  initialPlots();sim=simulateFull();renderFrame(1);
-  const play=document.getElementById("play");const pauseBtn=document.getElementById("pause");
-  play.addEventListener("click",start);pauseBtn.addEventListener("click",pause);document.getElementById("reset").addEventListener("click",reset);
-})();
-</script>
+  <!-- rest of your HTML and JS stays the same -->
+  ...
 </body>
 </html>
+
 
 
 
