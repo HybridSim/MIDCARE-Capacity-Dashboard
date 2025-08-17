@@ -104,11 +104,9 @@
         <div id="consPlot"></div>
       </div>
       <div class="card">
-        <div class="plotTitle">Model 2 beds</div>
         <div id="cap2Plot"></div>
       </div>
       <div class="card">
-        <div class="plotTitle">Model 4 beds</div>
         <div id="cap4Plot"></div>
       </div>
     </div>
@@ -130,13 +128,13 @@
   const BEDS_PER_PATIENT = 1.0;
 
   let POP_RATE  = 0.0074;
-  let CONS_RATE = 0.035;      // base consultant growth rate
+  let CONS_RATE = 0.035;
   let BED_RATE2_MULT = 0.999;
   let BED_RATE4 = 0.099;
   let OPT_OCC = 0.85;
   let NORM_LOS = 5.0;
-  let NORM_SPEC_TO_BED = 0.557; // People/(Beds*Days) baseline, spec-to-bed uses per-1000 below
-  let NORM_BED_TO_PAT  = 0.0051; // Beds/Person
+  let NORM_SPEC_TO_BED = 0.557; // baseline; we compute spec/bed-days per 1000 below
+  let NORM_BED_TO_PAT  = 0.0051;
 
   const idxOfYear = (y) => YEARS_ALL.indexOf(y);
 
@@ -144,12 +142,12 @@
   function simulateFull() {
     const i2025 = YEARS_HIST.length - 1;
     const basePop = POP_H[i2025];
-    const baseCons = CONS_H[i2025];
+    theCons     = CONS_H[i2025];
     const baseK2  = CAP2_H[i2025];
     const baseK4  = CAP4_H[i2025];
 
     const yearsProj = YEARS_ALL.slice(idxOfYear(2025));
-    const pop = [basePop], cons = [baseCons], k2 = [baseK2], k4 = [baseK4];
+    const pop = [basePop], cons = [theCons], k2 = [baseK2], k4 = [baseK4];
 
     for (let t = 1; t < yearsProj.length; t++) {
       const P  = pop[t-1];
@@ -171,9 +169,9 @@
       const bedToPatientRatio = patients > 0 ? K4 / patients : 0;
       const rate_effect3 = BED_RATE4 * (bedToPatientRatio / NORM_BED_TO_PAT);
 
-      // per-THOUSAND bed-days (×1000) to align with the 0.557 baseline
+      // per-THOUSAND bed-days to align with 0.557 baseline
       const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0;
-      // cap effective consultant growth at 6%/yr to prevent runaway
+      // cap effective consultant growth at 6%/yr
       const current_effect2 = Math.max(0, Math.min(0.06, CONS_RATE * (specToBed / NORM_SPEC_TO_BED)));
 
       const dP  = POP_RATE * P;
@@ -200,12 +198,19 @@
   }
   const cfg = { responsive:true, displaylogo:false };
 
-  // Optional x-axis title — we set it for the top row only.
-  function mkLayout(ytitle, yrange, xaxisTitle = "") {
+  // Layout helper: lets us set xTitle and a chart title if desired
+  function mkLayout(yTitle, yRange, {xTitle="", chartTitle=""} = {}) {
     return {
-      margin:{l:60,r:10,t:10,b:40},
-      xaxis:{title:xaxisTitle, range:[2009,2050]},
-      yaxis:{title:ytitle, range:yrange},
+      margin:{l:70,r:10,t:48,b:64},
+      xaxis:{
+        title:{text:xTitle},
+        titlefont:{size:12},
+        title_standoff:12,
+        automargin:true,
+        range:[2009,2050]
+      },
+      yaxis:{ title:{text:yTitle}, automargin:true, range:yRange },
+      title: chartTitle ? { text: chartTitle, x: 0, xanchor: "left", y: 0.98 } : undefined,
       showlegend:false
     };
   }
@@ -221,23 +226,23 @@
     Plotly.newPlot("popPlot",  [
       {x:YEARS_HIST,y:POP_H,  mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yPop0,          mode:"lines", line:{color:"#1f77b4", width:3}}
-    ], mkLayout("People", computeYRange(POP_H, [yPop0[1]]), "Year"), cfg);
+    ], mkLayout("People", computeYRange(POP_H, [yPop0[1]]), {xTitle:"Year"}), cfg);
 
     Plotly.newPlot("consPlot", [
       {x:YEARS_HIST,y:CONS_H, mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yCons0,         mode:"lines", line:{color:"#1f77b4", width:3}}
-    ], mkLayout("Consultants", computeYRange(CONS_H, [yCons0[1]]), "Year"), cfg);
+    ], mkLayout("Consultants", computeYRange(CONS_H, [yCons0[1]]), {xTitle:"Year"}), cfg);
 
-    // BOTTOM ROW — use y-axis titles as requested
+    // BOTTOM ROW — set in-plot titles
     Plotly.newPlot("cap2Plot", [
       {x:YEARS_HIST,y:CAP2_H, mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yK20,           mode:"lines", line:{color:"#1f77b4", width:3}}
-    ], mkLayout("Model 2 Beds", computeYRange(CAP2_H, [yK20[1]])), cfg);
+    ], mkLayout("Model 2 Beds", computeYRange(CAP2_H, [yK20[1]]), {chartTitle:"Model 2 beds"}), cfg);
 
     Plotly.newPlot("cap4Plot", [
       {x:YEARS_HIST,y:CAP4_H, mode:"lines", line:{color:"#d62728", width:2}},
       {x:x0,y:yK40,           mode:"lines", line:{color:"#1f77b4", width:3}}
-    ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [yK40[1]])), cfg);
+    ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [yK40[1]]), {chartTitle:"Model 4 beds"}), cfg);
   }
 
   // ---- Animation ----
@@ -325,7 +330,6 @@
 </script>
 </body>
 </html>
-
 
 
 
