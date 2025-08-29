@@ -10,7 +10,9 @@
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color: #111; }
     header { padding: 14px 16px; border-bottom: 1px solid #eee; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
-    header h1 { margin: 0; font-size: 20px; letter-spacing: 0.2px; }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand img { height:42px; width:auto; }
+    .brand h1 { margin: 0; font-size: 20px; letter-spacing: 0.2px; }
     .toolbar button {
       padding: 8px 10px; border: 1px solid #ddd; background:#fff; border-radius:10px; cursor:pointer;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04); font-weight:600;
@@ -36,7 +38,10 @@
 </head>
 <body>
   <header>
-    <h1>MIDCARE &copy; Capacity - Strategic Population Level</h1>
+    <div class="brand">
+      <img src="https://assets.zyrosite.com/AoP61N2BR4i8Q6jl/logo-hsml-AE07eKDgMLFgWBoQ.png" alt="MIDCARE / HSML Logo">
+      <h1>MIDCARE &copy; Capacity - Strategic Population Level</h1>
+    </div>
     <div class="toolbar">
       <button id="play">▶ Run</button>
       <button id="pause" disabled>⏸ Pause</button>
@@ -342,16 +347,5 @@
 })();
 </script>
 </body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
+</html>"""
 
