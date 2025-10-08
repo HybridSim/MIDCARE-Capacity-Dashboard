@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>MIDCARE &copy; Capacity - Strategic Population Level</title>
+  <title>MIDCARE© Capacity - Strategic Population Level</title>
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
   <style>
     :root { --gap: 12px; }
@@ -18,7 +18,7 @@
       padding: 8px 10px; border: 1px solid #ddd; background:#fff; border-radius:10px; cursor:pointer;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04); font-weight:600;
     }
-    .toolbar button:disabled { opacity: .5; cursor: default; }
+    .toolbar button:disabled { opacity:.5; cursor: default; }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
     .controls {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -35,13 +35,21 @@
     .legendSwatch { display:inline-block; width:10px; height:10px; vertical-align:middle; margin-right:6px; border-radius:2px; }
     .red { background:#d62728; } .blue { background:#1f77b4; }
     @media (max-width: 900px) { .grid { grid-template-columns: 1fr; grid-auto-rows: 380px; } }
+    /* Comparison table */
+    .compare { margin-top:16px; }
+    .compare h2 { font-size:16px; margin:8px 0; }
+    table.comp { width:100%; border-collapse: collapse; font-size: 13px; }
+    table.comp th, table.comp td { border:1px solid #eee; padding:10px; vertical-align: top; }
+    table.comp th { background:#fafafa; text-align:left; }
+    table.comp td a { color:#0044cc; text-decoration:none; }
+    table.comp td a:hover { text-decoration:underline; }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
       <img src="https://assets.zyrosite.com/AoP61N2BR4i8Q6jl/logo-hsml-AE07eKDgMLFgWBoQ.png" alt="MIDCARE / HSML Logo">
-      <h1>MIDCARE &copy; Capacity - Strategic Population Level</h1>
+      <h1>MIDCARE© Capacity - Strategic Population Level</h1>
     </div>
     <div class="toolbar">
       <label for="endYear" style="font-weight:600;">End year</label>
@@ -57,23 +65,23 @@
     <div class="controls">
       <div class="control">
         <label>Population growth rate (annual)</label>
-        <input id="popRate" type="range" min="0.0" max="0.02" step="0.0001" value="0.0074">
-        <div class="val"><span id="popRateVal">0.74%</span> / yr</div>
+        <input id="popRate" type="range" min="0.0" max="0.03" step="0.0001" value="0.019">
+        <div class="val"><span id="popRateVal">1.90%</span> / yr</div>
       </div>
       <div class="control">
         <label>Consultant increase rate (annual)</label>
-        <input id="consRate" type="range" min="0.0" max="0.06" step="0.0005" value="0.035">
-        <div class="val"><span id="consRateVal">3.50%</span> / yr</div>
+        <input id="consRate" type="range" min="0.0" max="0.10" step="0.0005" value="0.06">
+        <div class="val"><span id="consRateVal">6.00%</span> / yr</div>
       </div>
       <div class="control">
         <label>Model 2 bed growth multiplier</label>
-        <input id="bedRate2" type="range" min="0.5" max="1.5" step="0.001" value="0.999">
-        <div class="val">× <span id="bedRate2Val">0.999</span></div>
+        <input id="bedRate2" type="range" min="0.95" max="1.05" step="0.001" value="1.000">
+        <div class="val">× <span id="bedRate2Val">1.000</span></div>
       </div>
       <div class="control">
         <label>Model 4 bed growth rate (annual)</label>
-        <input id="bedRate4" type="range" min="0.00" max="0.20" step="0.0005" value="0.099">
-        <div class="val"><span id="bedRate4Val">9.90%</span> / yr</div>
+        <input id="bedRate4" type="range" min="0.00" max="0.20" step="0.0005" value="0.035">
+        <div class="val"><span id="bedRate4Val">3.50%</span> / yr</div>
       </div>
       <div class="control">
         <label>Optimal bed occupancy (fraction)</label>
@@ -82,19 +90,75 @@
       </div>
       <div class="control">
         <label>Normal length of stay (days)</label>
-        <input id="los" type="range" min="3" max="10" step="0.1" value="5">
-        <div class="val"><span id="losVal">5.0</span> days</div>
+        <input id="los" type="range" min="3" max="12" step="0.1" value="6.4">
+        <div class="val"><span id="losVal">6.4</span> days</div>
       </div>
       <div class="control">
-        <label>Normal specialist-to-bed ratio</label>
-        <input id="normSpecBed" type="range" min="0.2" max="1.0" step="0.001" value="0.557">
-        <div class="val"><span id="normSpecBedVal">0.557</span> people/(beds·days)</div>
+        <label>Normal specialists per 1,000 population <small>(people per 1,000 population)</small></label>
+        <input id="normSpecBed" type="range" min="0.2" max="2.0" step="0.001" value="0.904">
+        <div class="val"><span id="normSpecBedVal">0.904</span> per 1,000 bed-days</div>
       </div>
       <div class="control">
         <label>Normal bed-to-patient ratio</label>
-        <input id="normBedPat" type="range" min="0.002" max="0.02" step="0.0001" value="0.0051">
-        <div class="val"><span id="normBedPatVal">0.0051</span> beds/person</div>
+        <input id="normBedPat" type="range" min="0.001" max="0.01" step="0.0001" value="0.00268">
+        <div class="val"><span id="normBedPatVal">0.00268</span> beds/person</div>
       </div>
+    </div>
+
+    <!-- Comparison Table: Ireland National vs Midwest Baseline -->
+    <div class="card compare">
+      <h2>Ireland National vs Midwest Baseline Comparison (Defaults)</h2>
+      <table class="comp">
+        <thead>
+          <tr>
+            <th>Parameter</th>
+            <th>National (2024 Defaults)</th>
+            <th>Midwest (Baseline Defaults)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Population growth rate</td>
+            <td>1.9% — <a href="https://www.cso.ie/en/releasesandpublications/ep/p-pme/populationandmigrationestimatesapril2024/" target="_blank" rel="noopener">CSO Population &amp; Migration 2024</a></td>
+            <td>0.74% — model baseline (historic mean)</td>
+          </tr>
+          <tr>
+            <td>Consultant increase rate</td>
+            <td>6.0% — <a href="https://www.hse.ie/eng/staff/leadership-education-development/met/plan/medical-workforce-analysis-report-2024-2025.pdf" target="_blank" rel="noopener">HSE HR Strategy &amp; Workforce Planning</a></td>
+            <td>3.5% — model baseline</td>
+          </tr>
+          <tr>
+            <td>Model 2 bed growth multiplier</td>
+            <td>×1.000 — <a href="https://assets.gov.ie/static/documents/acute-hospital-inpatient-bed-capacity-expansion-plan.pdf" rel="noopener">HIQA Acute Hospital Oversight</a></td>
+            <td>×0.999 — internal calibration</td>
+          </tr>
+          <tr>
+            <td>Model 4 bed growth rate</td>
+            <td>3.5% — <a href="https://assets.gov.ie/static/documents/acute-hospital-inpatient-bed-capacity-expansion-plan.pdf" target="_blank" rel="noopener">HSE Capital Plan 2024–2026 (PDF)</a></td>
+            <td>9.9% — model baseline</td>
+          </tr>
+          <tr>
+            <td>Optimal bed occupancy</td>
+            <td>0.85 — <a href="https://www.nice.org.uk/guidance/ng94/evidence/39.bed-occupancy-pdf-172397464704." target="_blank" rel="noopener">HIQA National Standards</a></td>
+            <td>0.85 — same</td>
+          </tr>
+          <tr>
+            <td>Normal length of stay</td>
+            <td>6.4 days — <a href="https://www.hpo.ie/latest_hipe_nprs_reports/HIPE_2022/Activity%20in%20Acute%20Public%20Hospitals%20in%20Ireland%202022%20Annual%20Report%20(September%202023).pdf"_blank" rel="noopener">NTPF / HIPE Hospital Data</a></td>
+            <td>5.0 days — model baseline</td>
+          </tr>
+          <tr>
+            <td>Specialists per 1,000 population</td>
+            <td>0.904 (per 1,000 bed-days) — <a href="https://www.ihca.ie/news-and-publications/number-of-unfilled-consultant-posts-increases-to-728-45-more-than-previously-believed-%E2%80%93-new-data-analysis#:~:text=Ending%20the%20waiting%20lists,increased%20patient%20demand%20to%202028." rel="noopener">OECD Health Statistics</a></td>
+            <td>0.557 — model baseline</td>
+          </tr>
+          <tr>
+            <td>Beds per person</td>
+            <td>0.00268 — <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Healthcare_resource_statistics_-_beds" target="_blank" rel="noopener">Eurostat Beds per 1,000</a></td>
+            <td>0.0051 — model baseline</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div id="legendNote">
@@ -122,30 +186,28 @@
 
 <script>
 (function() {
-  // ---- Years ----
+  // Years and historic series
   const YEARS_ALL = Array.from({length: (2100 - 2009 + 1)}, (_, i) => 2009 + i);
   const YEARS_HIST = YEARS_ALL.filter(y => y <= 2025);
-
-  // ---- Historic data ----
   const POP_H  = [361028,370177.5,379327,380496,381665,382834,384003,385172,389723.1667,394274.3333,398825.5,403376.6667,407927.8333,412479,412479,412479,412479];
   const CONS_H = [129,132,135,138,141,145,149,153,157,161,165,176,174,189.5,205,234,240];
   const CAP2_H = [179,179,175,172,189,185,177,178,167,186,187,184,184,184,184,184,184];
   const CAP4_H = [420,404,401,403,367,354,357,426,421,444,434,460,516,522.3333,528.6667,535,535];
 
-  // ---- Defaults ----
+  // Defaults (Ireland national 2024)
   const DEFAULTS = {
     END_YEAR: 2065,
-    POP_RATE: 0.0074,
-    CONS_RATE: 0.035,
-    BED_RATE2_MULT: 0.999,
-    BED_RATE4: 0.099,
+    POP_RATE: 0.019,
+    CONS_RATE: 0.06,
+    BED_RATE2_MULT: 1.000,
+    BED_RATE4: 0.035,
     OPT_OCC: 0.85,
-    NORM_LOS: 5.0,
-    NORM_SPEC_TO_BED: 0.557,
-    NORM_BED_TO_PAT: 0.0051
+    NORM_LOS: 6.4,
+    NORM_SPEC_TO_BED: 0.904,  // per 1,000 bed-days
+    NORM_BED_TO_PAT: 0.00268  // beds per person
   };
 
-  // ---- Parameters (mutable) ----
+  // Mutable params
   let END_YEAR = DEFAULTS.END_YEAR;
   let POP_RATE  = DEFAULTS.POP_RATE;
   let CONS_RATE = DEFAULTS.CONS_RATE;
@@ -156,14 +218,14 @@
   let NORM_SPEC_TO_BED = DEFAULTS.NORM_SPEC_TO_BED;
   let NORM_BED_TO_PAT  = DEFAULTS.NORM_BED_TO_PAT;
 
-  // ---- UI refs ----
+  // UI refs
   const $ = (id) => document.getElementById(id);
   const play = $("play");
   const pauseBtn = $("pause");
   const yearLabel = $("yearLabel");
   const endYearSel = $("endYear");
 
-  // Populate end-year dropdown (2025..2100), set to default
+  // Populate end year 2025..2100
   function populateEndYearOptions() {
     endYearSel.innerHTML = "";
     for (let y = 2025; y <= 2100; y++) {
@@ -178,7 +240,7 @@
 
   const idxOfYear = (y) => YEARS_ALL.indexOf(y);
 
-  // ---- Simulation (projects from 2025 onward) ----
+  // Projection
   function simulateProjection() {
     const i2025 = YEARS_HIST.length - 1;
     const basePop = POP_H[i2025];
@@ -209,7 +271,7 @@
       const bedToPatientRatio = patients > 0 ? K4 / patients : 0;
       const rate_effect3 = BED_RATE4 * (bedToPatientRatio / NORM_BED_TO_PAT);
 
-      const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0;
+      const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0; // per 1,000 bed-days
       const current_effect2 = Math.max(0, Math.min(0.06, CONS_RATE * (specToBed / NORM_SPEC_TO_BED)));
 
       const dP  = POP_RATE * P;
@@ -226,7 +288,6 @@
     return { yearsProj, pop, cons, k2, k4 };
   }
 
-  // ---- Plot helpers ----
   function computeYRange(hist, projSlice) {
     const all = hist.concat(projSlice);
     const min = Math.min.apply(null, all);
@@ -246,10 +307,8 @@
     };
   }
 
-  // ---- Initial plots: red only ----
   function initialPlots() {
     const xHist = YEARS_HIST;
-
     Plotly.newPlot("popPlot",  [
       {x:xHist,y:POP_H,  mode:"lines", line:{color:"#d62728", width:2}}
     ], mkLayout("People", computeYRange(POP_H, [POP_H.at(-1)]), {xTitle:"Year"}), cfg);
@@ -267,11 +326,10 @@
     ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [CAP4_H.at(-1)]), {chartTitle:"Model 4 beds"}), cfg);
   }
 
-  // ---- Animation (from 2025 to END_YEAR) ----
   let timer = null;
   const msPerFrame = 200;
   let proj = null;
-  let frameIdx = 0; // 0 => year 2025
+  let frameIdx = 0;
 
   function addBlueTracesIfMissing() {
     const addIf = (divId, y0) => {
@@ -287,7 +345,7 @@
   }
 
   function renderFrame(i) {
-    const years = proj.yearsProj.slice(0, i+1); // 2025.. up to current
+    const years = proj.yearsProj.slice(0, i+1);
     const yrPop  = computeYRange(POP_H,  proj.pop.slice(0, i+1));
     const yrCons = computeYRange(CONS_H, proj.cons.slice(0, i+1));
     const yrK2   = computeYRange(CAP2_H, proj.k2.slice(0, i+1));
@@ -311,13 +369,10 @@
   function start() {
     play.disabled = true; 
     pauseBtn.disabled = false;
-
     proj = simulateProjection();
     addBlueTracesIfMissing();
-
     frameIdx = 0;
     renderFrame(frameIdx);
-
     if (timer) clearInterval(timer);
     timer = setInterval(() => {
       frameIdx += 1;
@@ -334,12 +389,8 @@
     timer = null; 
   }
 
-  // ---- Reset to defaults ----
   function reset() {
-    // stop animation
     pause();
-
-    // restore parameters
     END_YEAR           = DEFAULTS.END_YEAR;
     POP_RATE           = DEFAULTS.POP_RATE;
     CONS_RATE          = DEFAULTS.CONS_RATE;
@@ -350,7 +401,6 @@
     NORM_SPEC_TO_BED   = DEFAULTS.NORM_SPEC_TO_BED;
     NORM_BED_TO_PAT    = DEFAULTS.NORM_BED_TO_PAT;
 
-    // restore sliders & value labels
     $("popRate").value      = String(POP_RATE);
     $("consRate").value     = String(CONS_RATE);
     $("bedRate2").value     = String(BED_RATE2_MULT);
@@ -362,26 +412,21 @@
 
     $("popRateVal").textContent     = (POP_RATE*100).toFixed(2) + "%";
     $("consRateVal").textContent    = (CONS_RATE*100).toFixed(2) + "%";
-    $("bedRate2Val").textContent    = BED_RATE2_MULT.toFixed(3);
+    $("bedRate2Val").textContent    = Number(BED_RATE2_MULT).toFixed(3);
     $("bedRate4Val").textContent    = (BED_RATE4*100).toFixed(2) + "%";
     $("optOccVal").textContent      = OPT_OCC.toFixed(2);
-    $("losVal").textContent         = NORM_LOS.toFixed(1);
-    $("normSpecBedVal").textContent = NORM_SPEC_TO_BED.toFixed(3);
-    $("normBedPatVal").textContent  = NORM_BED_TO_PAT.toFixed(4);
+    $("losVal").textContent         = Number(NORM_LOS).toFixed(1);
+    $("normSpecBedVal").textContent = Number(NORM_SPEC_TO_BED).toFixed(3);
+    $("normBedPatVal").textContent  = Number(NORM_BED_TO_PAT).toFixed(5);
 
-    // restore dropdown
     endYearSel.value = String(DEFAULTS.END_YEAR);
-
-    // restore label
     yearLabel.textContent = "Selected year: " + DEFAULTS.END_YEAR;
 
-    // recalc projection and redraw RED ONLY (clean state)
     proj = simulateProjection();
     frameIdx = 0;
     initialPlots();
   }
 
-  // ---- Sliders bind ----
   function updateParams() {
     POP_RATE         = parseFloat($("popRate").value);
     CONS_RATE        = parseFloat($("consRate").value);
@@ -394,14 +439,13 @@
 
     $("popRateVal").textContent     = (POP_RATE*100).toFixed(2) + "%";
     $("consRateVal").textContent    = (CONS_RATE*100).toFixed(2) + "%";
-    $("bedRate2Val").textContent    = BED_RATE2_MULT.toFixed(3);
+    $("bedRate2Val").textContent    = Number(BED_RATE2_MULT).toFixed(3);
     $("bedRate4Val").textContent    = (BED_RATE4*100).toFixed(2) + "%";
     $("optOccVal").textContent      = OPT_OCC.toFixed(2);
-    $("losVal").textContent         = NORM_LOS.toFixed(1);
-    $("normSpecBedVal").textContent = NORM_SPEC_TO_BED.toFixed(3);
-    $("normBedPatVal").textContent  = NORM_BED_TO_PAT.toFixed(4);
+    $("losVal").textContent         = Number(NORM_LOS).toFixed(1);
+    $("normSpecBedVal").textContent = Number(NORM_SPEC_TO_BED).toFixed(3);
+    $("normBedPatVal").textContent  = Number(NORM_BED_TO_PAT).toFixed(5);
 
-    // reset view to red-only until next Run
     proj = simulateProjection();
     frameIdx = 0;
     pause();
@@ -413,7 +457,6 @@
     $(id).addEventListener("change", updateParams);
   });
 
-  // ---- End year change ----
   endYearSel.addEventListener("change", () => {
     END_YEAR = parseInt(endYearSel.value, 10);
     frameIdx = 0;
@@ -422,11 +465,9 @@
     initialPlots();
   });
 
-  // ---- Init ----
-  initialPlots();                       // red historic only on load
+  initialPlots();
   yearLabel.textContent = "Selected year: " + DEFAULTS.END_YEAR;
 
-  // ---- Buttons ----
   play.addEventListener("click", start);
   pauseBtn.addEventListener("click", pause);
   $("reset").addEventListener("click", reset);
@@ -434,4 +475,6 @@
 </script>
 </body>
 </html>
+
+
 
