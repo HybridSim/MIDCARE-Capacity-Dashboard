@@ -20,29 +20,59 @@
     }
     .toolbar button:disabled { opacity:.5; cursor: default; }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+    /* SLIDERS: 4 across (2 rows × 4) */
     .controls {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: var(--gap); margin: 12px 0 16px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--gap);
+      margin: 12px 0 16px;
     }
-    .control { background: #fafafa; border: 1px solid #eee; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .control.card {
+      background: #fafafa; border: 1px solid #eee; border-radius: 12px;
+      padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      min-height: 140px; /* equal height cards */
+      display: flex; flex-direction: column; justify-content: center;
+    }
     .control label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 6px; }
     .control input[type=range] { width: 100%; }
-    .control .val { font-variant-numeric: tabular-nums; font-size: 12px; color: #444; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 420px; gap: var(--gap); }
-    .card { padding: 6px; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); background: #fff; }
-    .plotTitle { font-size: 14px; font-weight: 600; margin: 8px 6px 0 8px; color: #222; }
+    .control .val { font-variant-numeric: tabular-nums; font-size: 12px; color: #444; margin-top: 4px; }
+
+    /* GRAPHS: 4 across to match sliders */
+    .plots {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--gap);
+      margin-top: 8px;
+    }
+    .plotcard {
+      background:#fff; border:1px solid #eee; border-radius:12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      min-height: 260px; /* equal card height for symmetry */
+      display:flex; flex-direction:column;
+    }
+    .plotTitle { font-size: 13px; font-weight: 600; margin: 8px 10px 0 10px; color: #222; }
+    .plotbox { height: 220px; margin: 6px 6px 10px 6px; } /* fixed inner plot height */
+
     #legendNote { margin: 8px 0 12px; font-size: 12px; color: #444; }
     .legendSwatch { display:inline-block; width:10px; height:10px; vertical-align:middle; margin-right:6px; border-radius:2px; }
     .red { background:#d62728; } .blue { background:#1f77b4; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; grid-auto-rows: 380px; } }
-    /* Comparison table */
-    .compare { margin-top:16px; }
-    .compare h2 { font-size:16px; margin:8px 0; }
-    table.comp { width:100%; border-collapse: collapse; font-size: 13px; }
-    table.comp th, table.comp td { border:1px solid #eee; padding:10px; vertical-align: top; }
-    table.comp th { background:#fafafa; text-align:left; }
-    table.comp td a { color:#0044cc; text-decoration:none; }
-    table.comp td a:hover { text-decoration:underline; }
+
+    /* References list */
+    .refs { margin-top:16px; }
+    .refs h2 { font-size:16px; margin:8px 0; }
+    .refs ul { font-size:13px; line-height:1.6; margin-left:20px; }
+    .refs a { color:#0044cc; text-decoration: none; }
+    .refs a:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .controls, .plots { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .controls, .plots { grid-template-columns: 1fr; }
+      .plotbox { height: 200px; }
+    }
   </style>
 </head>
 <body>
@@ -62,103 +92,48 @@
   </header>
 
   <div class="wrap">
+    <!-- ALL 8 SLIDERS (4 across) -->
     <div class="controls">
-      <div class="control">
+      <div class="control card">
         <label>Population growth rate (annual)</label>
         <input id="popRate" type="range" min="0.0" max="0.03" step="0.0001" value="0.019">
         <div class="val"><span id="popRateVal">1.90%</span> / yr</div>
       </div>
-      <div class="control">
+      <div class="control card">
         <label>Consultant increase rate (annual)</label>
         <input id="consRate" type="range" min="0.0" max="0.10" step="0.0005" value="0.06">
         <div class="val"><span id="consRateVal">6.00%</span> / yr</div>
       </div>
-      <div class="control">
+      <div class="control card">
         <label>Model 2 bed growth multiplier</label>
         <input id="bedRate2" type="range" min="0.95" max="1.05" step="0.001" value="1.000">
         <div class="val">× <span id="bedRate2Val">1.000</span></div>
       </div>
-      <div class="control">
+      <div class="control card">
         <label>Model 4 bed growth rate (annual)</label>
         <input id="bedRate4" type="range" min="0.00" max="0.20" step="0.0005" value="0.035">
         <div class="val"><span id="bedRate4Val">3.50%</span> / yr</div>
       </div>
-      <div class="control">
+      <div class="control card">
         <label>Optimal bed occupancy (fraction)</label>
         <input id="optOcc" type="range" min="0.70" max="0.95" step="0.005" value="0.85">
         <div class="val"><span id="optOccVal">0.85</span></div>
       </div>
-      <div class="control">
+      <div class="control card">
         <label>Normal length of stay (days)</label>
-        <input id="los" type="range" min="3" max="12" step="0.1" value="6.4">
+        <input id="los" type="range" min="3" max="12" step="0.1" value="6.0">
         <div class="val"><span id="losVal">6.4</span> days</div>
       </div>
-      <div class="control">
-        <label>Normal specialists per 1,000 population <small>(people per 1,000 population)</small></label>
+      <div class="control card">
+        <label>Normal specialist-to-bed ratio <small>(per 1,000 bed-days)</small></label>
         <input id="normSpecBed" type="range" min="0.2" max="2.0" step="0.001" value="0.904">
-        <div class="val"><span id="normSpecBedVal">0.904</span> per 1,000 bed-days</div>
+        <div class="val"><span id="normSpecBedVal">0.904</span></div>
       </div>
-      <div class="control">
+      <div class="control card">
         <label>Normal bed-to-patient ratio</label>
         <input id="normBedPat" type="range" min="0.001" max="0.01" step="0.0001" value="0.00268">
         <div class="val"><span id="normBedPatVal">0.00268</span> beds/person</div>
       </div>
-    </div>
-
-    <!-- Comparison Table: Ireland National vs Midwest Baseline -->
-    <div class="card compare">
-      <h2>Ireland National vs Midwest Baseline Comparison (Defaults)</h2>
-      <table class="comp">
-        <thead>
-          <tr>
-            <th>Parameter</th>
-            <th>National (2024 Defaults)</th>
-            <th>Midwest (Baseline Defaults)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Population growth rate</td>
-            <td>1.9% — <a href="https://www.cso.ie/en/releasesandpublications/ep/p-pme/populationandmigrationestimatesapril2024/" target="_blank" rel="noopener">CSO Population &amp; Migration 2024</a></td>
-            <td>0.74% — model baseline (historic mean)</td>
-          </tr>
-          <tr>
-            <td>Consultant increase rate</td>
-            <td>6.0% — <a href="https://www.hse.ie/eng/staff/leadership-education-development/met/plan/medical-workforce-analysis-report-2024-2025.pdf" target="_blank" rel="noopener">HSE HR Strategy &amp; Workforce Planning</a></td>
-            <td>3.5% — model baseline</td>
-          </tr>
-          <tr>
-            <td>Model 2 bed growth multiplier</td>
-            <td>×1.000 — <a href="https://assets.gov.ie/static/documents/acute-hospital-inpatient-bed-capacity-expansion-plan.pdf" rel="noopener">HIQA Acute Hospital Oversight</a></td>
-            <td>×0.999 — internal calibration</td>
-          </tr>
-          <tr>
-            <td>Model 4 bed growth rate</td>
-            <td>3.5% — <a href="https://assets.gov.ie/static/documents/acute-hospital-inpatient-bed-capacity-expansion-plan.pdf" target="_blank" rel="noopener">HSE Capital Plan 2024–2026 (PDF)</a></td>
-            <td>9.9% — model baseline</td>
-          </tr>
-          <tr>
-            <td>Optimal bed occupancy</td>
-            <td>0.85 — <a href="https://www.nice.org.uk/guidance/ng94/evidence/39.bed-occupancy-pdf-172397464704." target="_blank" rel="noopener">HIQA National Standards</a></td>
-            <td>0.85 — same</td>
-          </tr>
-          <tr>
-            <td>Normal length of stay</td>
-            <td>6.4 days — <a href="https://www.hpo.ie/latest_hipe_nprs_reports/HIPE_2022/Activity%20in%20Acute%20Public%20Hospitals%20in%20Ireland%202022%20Annual%20Report%20(September%202023).pdf"_blank" rel="noopener">NTPF / HIPE Hospital Data</a></td>
-            <td>5.0 days — model baseline</td>
-          </tr>
-          <tr>
-            <td>Specialists per 1,000 population</td>
-            <td>0.904 (per 1,000 bed-days) — <a href="https://www.ihca.ie/news-and-publications/number-of-unfilled-consultant-posts-increases-to-728-45-more-than-previously-believed-%E2%80%93-new-data-analysis#:~:text=Ending%20the%20waiting%20lists,increased%20patient%20demand%20to%202028." rel="noopener">OECD Health Statistics</a></td>
-            <td>0.557 — model baseline</td>
-          </tr>
-          <tr>
-            <td>Beds per person</td>
-            <td>0.00268 — <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Healthcare_resource_statistics_-_beds" target="_blank" rel="noopener">Eurostat Beds per 1,000</a></td>
-            <td>0.0051 — model baseline</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
 
     <div id="legendNote">
@@ -166,21 +141,39 @@
       <span class="legendSwatch blue"></span>Projection from 2025 (animated)
     </div>
 
-    <div class="grid">
-      <div class="card">
+    <!-- 4 GRAPHS (4 across) -->
+    <div class="plots">
+      <div class="plotcard">
         <div class="plotTitle">Population — Midwest</div>
-        <div id="popPlot"></div>
+        <div id="popPlot" class="plotbox"></div>
       </div>
-      <div class="card">
+      <div class="plotcard">
         <div class="plotTitle">Consultants — Headcount</div>
-        <div id="consPlot"></div>
+        <div id="consPlot" class="plotbox"></div>
       </div>
-      <div class="card">
-        <div id="cap2Plot"></div>
+      <div class="plotcard">
+        <div class="plotTitle">Model 2 Beds</div>
+        <div id="cap2Plot" class="plotbox"></div>
       </div>
-      <div class="card">
-        <div id="cap4Plot"></div>
+      <div class="plotcard">
+        <div class="plotTitle">Model 4 Beds</div>
+        <div id="cap4Plot" class="plotbox"></div>
       </div>
+    </div>
+
+    <!-- REFERENCES BELOW THE GRAPHS -->
+    <div class="refs">
+      <h2>Data Sources for Default Parameters (National & Midwest)</h2>
+      <ul>
+        <li><strong>Population growth rate (National 1.9%)</strong> — <a href="https://www.cso.ie/en/releasesandpublications/ep/p-pme/populationandmigrationestimatesapril2024/" target="_blank" rel="noopener">CSO – Population &amp; Migration Estimates April 2024</a>; <em>Midwest baseline</em>: historic mean (model)</li>
+        <li><strong>Consultant increase rate (National 6.0%)</strong> — <a href="https://www.hse.ie/eng/staff/leadership-education-development/met/plan/medical-workforce-analysis-report-2024-2025.pdf" target="_blank" rel="noopener">HSE – Medical Workforce Analysis Report 2024–2025 (PDF)</a>; <em>Midwest baseline</em>: 3.5% (model)</li>
+        <li><strong>Model 2 bed growth multiplier (National ×1.000)</strong> — <a href="https://assets.gov.ie/static/documents/acute-hospital-inpatient-bed-capacity-expansion-plan.pdf" target="_blank" rel="noopener">Acute Hospital Inpatient Bed Capacity Expansion Plan (PDF)</a>; <em>Midwest baseline</em>: ×0.999 (internal calibration)</li>
+        <li><strong>Model 4 bed growth rate (National 3.5%)</strong> — <a href="https://assets.gov.ie/static/documents/acute-hospital-inpatient-bed-capacity-expansion-plan.pdf" target="_blank" rel="noopener">Acute Hospital Inpatient Bed Capacity Expansion Plan (PDF)</a>; <em>Midwest baseline</em>: 9.9% (model)</li>
+        <li><strong>Optimal bed occupancy (0.85)</strong> — <a href="https://www.nice.org.uk/guidance/ng94/evidence/39.bed-occupancy-pdf-172397464704." target="_blank" rel="noopener">NICE/HIQA – Bed Occupancy context</a></li>
+        <li><strong>Normal length of stay (National 6.0 days)</strong> — <a href="https://www.gov.ie/en/department-of-health/collections/national-healthcare-statistics-2025/" target="_blank" rel="noopener">HIPE – Activity in Acute Public Hospitals in Ireland 2022 Annual Report (PDF)</a>; <em>Midwest baseline</em>: 5.0 days (model)</li>
+        <li><strong>Specialists (per 1,000 bed-days) (National 0.904)</strong> — <a href="https://www.ihca.ie/news-and-publications/number-of-unfilled-consultant-posts-increases-to-728-45-more-than-previously-believed-%E2%80%93-new-data-analysis#:~:text=Ending%20the%20waiting%20lists,increased%20patient%20demand%20to%202028." target="_blank" rel="noopener">IHCA analysis referencing OECD Health Statistics</a>; <em>Midwest baseline</em>: 0.557 (model)</li>
+        <li><strong>Beds per person (National 0.00268)</strong> — <a href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Healthcare_resource_statistics_-_beds" target="_blank" rel="noopener">Eurostat – Healthcare resource statistics: beds</a>; <em>Midwest baseline</em>: 0.0051 (model)</li>
+      </ul>
     </div>
   </div>
 
@@ -194,7 +187,6 @@
   const CAP2_H = [179,179,175,172,189,185,177,178,167,186,187,184,184,184,184,184,184];
   const CAP4_H = [420,404,401,403,367,354,357,426,421,444,434,460,516,522.3333,528.6667,535,535];
 
-  // Defaults (Ireland national 2024)
   const DEFAULTS = {
     END_YEAR: 2065,
     POP_RATE: 0.019,
@@ -203,11 +195,10 @@
     BED_RATE4: 0.035,
     OPT_OCC: 0.85,
     NORM_LOS: 6.4,
-    NORM_SPEC_TO_BED: 0.904,  // per 1,000 bed-days
-    NORM_BED_TO_PAT: 0.00268  // beds per person
+    NORM_SPEC_TO_BED: 0.904,
+    NORM_BED_TO_PAT: 0.00268
   };
 
-  // Mutable params
   let END_YEAR = DEFAULTS.END_YEAR;
   let POP_RATE  = DEFAULTS.POP_RATE;
   let CONS_RATE = DEFAULTS.CONS_RATE;
@@ -218,14 +209,12 @@
   let NORM_SPEC_TO_BED = DEFAULTS.NORM_SPEC_TO_BED;
   let NORM_BED_TO_PAT  = DEFAULTS.NORM_BED_TO_PAT;
 
-  // UI refs
   const $ = (id) => document.getElementById(id);
   const play = $("play");
   const pauseBtn = $("pause");
   const yearLabel = $("yearLabel");
   const endYearSel = $("endYear");
 
-  // Populate end year 2025..2100
   function populateEndYearOptions() {
     endYearSel.innerHTML = "";
     for (let y = 2025; y <= 2100; y++) {
@@ -240,7 +229,6 @@
 
   const idxOfYear = (y) => YEARS_ALL.indexOf(y);
 
-  // Projection
   function simulateProjection() {
     const i2025 = YEARS_HIST.length - 1;
     const basePop = POP_H[i2025];
@@ -271,7 +259,7 @@
       const bedToPatientRatio = patients > 0 ? K4 / patients : 0;
       const rate_effect3 = BED_RATE4 * (bedToPatientRatio / NORM_BED_TO_PAT);
 
-      const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0; // per 1,000 bed-days
+      const specToBed = totalBedsDays > 0 ? (C / Math.max(1,totalBedsDays)) * 1000 : 0;
       const current_effect2 = Math.max(0, Math.min(0.06, CONS_RATE * (specToBed / NORM_SPEC_TO_BED)));
 
       const dP  = POP_RATE * P;
@@ -297,12 +285,12 @@
   }
   const cfg = { responsive:true, displaylogo:false };
 
-  function mkLayout(yTitle, yRange, {xTitle="", chartTitle=""} = {}) {
+  function mkLayout(yTitle, yRange, {xTitle=""} = {}) {
     return {
-      margin:{l:70,r:10,t:48,b:64},
-      xaxis:{ title:{text:xTitle}, titlefont:{size:12}, title_standoff:12, automargin:true, range:[2009, END_YEAR] },
-      yaxis:{ title:{text:yTitle}, automargin:true, range:yRange },
-      title: chartTitle ? { text: chartTitle, x: 0, xanchor: "left", y: 0.98 } : undefined,
+      margin:{l:50,r:6,t:10,b:36},
+      height: 220,
+      xaxis:{ title:{text:xTitle}, titlefont:{size:11}, tickfont:{size:10}, automargin:true, range:[2009, END_YEAR] },
+      yaxis:{ title:{text:yTitle}, titlefont:{size:11}, tickfont:{size:10}, automargin:true, range:yRange },
       showlegend:false
     };
   }
@@ -319,11 +307,11 @@
 
     Plotly.newPlot("cap2Plot", [
       {x:xHist,y:CAP2_H, mode:"lines", line:{color:"#d62728", width:2}}
-    ], mkLayout("Model 2 Beds", computeYRange(CAP2_H, [CAP2_H.at(-1)]), {chartTitle:"Model 2 beds"}), cfg);
+    ], mkLayout("Model 2 Beds", computeYRange(CAP2_H, [CAP2_H.at(-1)]), {xTitle:"Year"}), cfg);
 
     Plotly.newPlot("cap4Plot", [
       {x:xHist,y:CAP4_H, mode:"lines", line:{color:"#d62728", width:2}}
-    ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [CAP4_H.at(-1)]), {chartTitle:"Model 4 beds"}), cfg);
+    ], mkLayout("Model 4 Beds", computeYRange(CAP4_H, [CAP4_H.at(-1)]), {xTitle:"Year"}), cfg);
   }
 
   let timer = null;
@@ -475,6 +463,8 @@
 </script>
 </body>
 </html>
+
+
 
 
 
